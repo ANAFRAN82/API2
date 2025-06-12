@@ -16,7 +16,6 @@ const mongoOptions = {
   maxPoolSize: 10, // Número máximo de conexiones
   minPoolSize: 2,  // Número mínimo de conexiones
   maxIdleTimeMS: 30000, // Cerrar conexiones después de 30 segundos de inactividad
-  bufferMaxEntries: 0,
   retryWrites: true,
   w: 'majority'
 };
