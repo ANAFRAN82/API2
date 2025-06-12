@@ -1,79 +1,30 @@
-// Dependencia de mongoose
 const mongoose = require("mongoose");
-// Dependencia para el archivo .env
 require("dotenv").config();
 
-// Extraer la URL de conexión del .env
 const URL = process.env.URL;
 
-// Configuración de opciones para Mongoose
-const mongoOptions = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000, // 30 segundos
-  connectTimeoutMS: 30000, // 30 segundos
-  socketTimeoutMS: 45000, // 45 segundos
-  maxPoolSize: 10, // Número máximo de conexiones
-  minPoolSize: 2,  // Número mínimo de conexiones
-  maxIdleTimeMS: 30000, // Cerrar conexiones después de 30 segundos de inactividad
-  retryWrites: true,
-  w: 'majority'
-};
-
-// Conexión a la base de datos
 const ConnectDB = async () => {
   try {
-    console.log('🔄 Conectando a MongoDB...');
-    console.log('📡 URL de conexión:', URL.replace(/\/\/[^:]+:[^@]+@/, '//***:***@'));
+    console.log("Intentando conectar a MongoDB en:", URL); // Log de la URL usada
     
-    await mongoose.connect(URL, mongoOptions);
+    mongoose.set('debug', true); // Habilitar logs detallados de Mongoose
     
-    console.log('✅ Base de datos conectada correctamente');
-    
-    // Event listeners para la conexión
-    mongoose.connection.on('connected', () => {
-      console.log('📡 Mongoose conectado a MongoDB');
+    const conn = await mongoose.connect(URL, {
+      serverSelectionTimeoutMS: 5000, // Tiempo de espera de 5 segundos
     });
-
-    mongoose.connection.on('error', (err) => {
-      console.error('❌ Error en la conexión de Mongoose:', err);
-    });
-
-    mongoose.connection.on('disconnected', () => {
-      console.log('📡 Mongoose desconectado de MongoDB');
-    });
-
-    // Cerrar la conexión si la aplicación se termina
-    process.on('SIGINT', async () => {
-      try {
-        await mongoose.connection.close();
-        console.log('📡 Conexión de MongoDB cerrada');
-        process.exit(0);
-      } catch (error) {
-        console.error('Error al cerrar la conexión:', error);
-        process.exit(1);
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ No se pudo conectar a la base de datos:', error.message);
     
-    // Log adicional para debugging
-    if (error.name === 'MongoServerSelectionError') {
-      console.error('💡 Verifica que MongoDB esté corriendo y la URL sea correcta');
-    }
-    
-    // En producción, intentar reconectar después de un delay
-    if (process.env.NODE_ENV === 'production') {
-      console.log('🔄 Intentando reconectar en 5 segundos...');
-      setTimeout(() => {
-        ConnectDB();
-      }, 5000);
-    } else {
-      process.exit(1);
-    }
-  }
-};
+    console.log("Database connected successfully");
+    console.log("Host:", conn.connection.host);
+    console.log("Port:", conn.connection.port);
+    console.log("Database:", conn.connection.name);
+  } catch(error) {
+    console.error("Error al conectar a MongoDB:");
+    console.error("- Código de error:", error.code);
+    console.error("- Nombre de error:", error.name);
+    console.error("- Mensaje:", error.message);
+    console.error("- Stack completo:", error.stack);
+    process.exit(1); // Salir con código de error
+  }  
+}
 
-// Exportación del módulo
-module.exports = { ConnectDB };
+module.exports = {ConnectDB};
